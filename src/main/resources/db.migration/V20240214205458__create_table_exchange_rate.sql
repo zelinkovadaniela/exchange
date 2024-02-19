@@ -19,4 +19,3 @@ create table if not exists exchange_rate (
 );
 
 create index exchange_rate_short_name_idx on exchange_rate (short_name);
-```

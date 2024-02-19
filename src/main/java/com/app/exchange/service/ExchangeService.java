@@ -1,6 +1,8 @@
 package com.app.exchange.service;
 
 import com.app.exchange.dto.ExchangeRateDto;
+import com.app.exchange.mapper.DomainExchangeRateMapper;
+import com.app.exchange.repository.ExchangeRateRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -21,11 +23,21 @@ public class ExchangeService {
     private String apiUrl;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
+    private final ExchangeRateRepository exchangeRateRepository;
+    private final DomainExchangeRateMapper domainExchangeRateMapper;
 
     public List<ExchangeRateDto> getExchangeRates(final boolean usedb) {
         try {
+            if (usedb) {
+                final var exchangeRateJpaList = exchangeRateRepository.findAll();
+                return exchangeRateJpaList.stream()
+                        .map(domainExchangeRateMapper::map)
+                        .toList();
+            }
             final var exchangeRates = getExchangeRatesJsonRest();
-            log.info("Exchange rates: {}", exchangeRates);
+            exchangeRates.stream()
+                    .map(domainExchangeRateMapper::map)
+                    .forEach(exchangeRateRepository::save);
             return exchangeRates;
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Error while getting exchange rates", e);
